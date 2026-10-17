@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>打字测速 | Typing Speed</title>
+<style>
+:root{--c:#00BCD4;--cd:#0097A7;--w:#fff;--bg:#f0f8f9;--t:#333;--err:#FF5252;--ok:#4CAF50}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--t);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;overflow:hidden;user-select:none}
+.lang-btn{position:fixed;top:20px;left:20px;z-index:100;padding:8px 16px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
+.lang-btn:hover{background:var(--cd)}
+.fs-btn{position:fixed;top:20px;right:20px;z-index:100;padding:8px 16px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
+.fs-btn:hover{background:var(--cd)}
+h2{color:var(--c);margin-bottom:15px;font-weight:600}
+.target-text{max-width:600px;width:90vw;padding:20px;background:var(--w);border-radius:12px;font-size:18px;line-height:1.8;letter-spacing:2px;border:2px solid var(--c);box-shadow:0 4px 16px rgba(0,188,212,0.1);margin-bottom:15px;min-height:100px}
+.target-text span{transition:color .1s}
+.target-text span.correct{color:var(--ok)}
+.target-text span.incorrect{color:var(--err);text-decoration:underline}
+.target-text span.current{border-bottom:2px solid var(--c)}
+textarea{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.stats{display:flex;gap:30px;font-size:16px;font-weight:600;margin-bottom:10px}
+.stats .val{color:var(--c)}
+.stats .wpm{font-size:28px;font-weight:700;color:var(--cd)}
+.btn-new{padding:10px 24px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:15px;font-weight:600;margin-top:8px;transition:.2s;font-family:inherit}
+.btn-new:hover{background:var(--cd)}
+.hint{font-size:13px;color:#999;margin-top:6px}
+@media(max-width:600px){.target-text{font-size:15px}.stats{gap:16px;font-size:14px}}
+</style>
+</head>
+<body>
+<button class="lang-btn" onclick="toggleLang()">中/EN</button>
+<button class="fs-btn" onclick="toggleFS()">全屏</button>
+<h2 data-key="title">打字测速</h2>
+<div class="target-text" id="targetText" onclick="focusInput()"></div>
+<textarea id="hiddenInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+<div class="stats">
+  <div><span class="wpm" id="wpm">0</span> <span data-key="wpm">WPM</span></div>
+  <div data-key="acc">准确率: <span class="val" id="acc">100%</span></div>
+  <div data-key="time">用时: <span class="val" id="time">0s</span></div>
+</div>
+<div class="hint" data-key="hint">点击上方文本区域开始打字</div>
+<button class="btn-new" onclick="newText()" data-key="new">换一段</button>
+<script>
+/* ===== 打字测速 / Typing Speed ===== */
+var i18n={zh:{title:"打字测速",wpm:"WPM",acc:"准确率: ",time:"用时: ",new:"换一段",hint:"点击上方文本区域开始打字"},en:{title:"Typing Speed Test",wpm:"WPM",acc:"Accuracy: ",time:"Time: ",new:"New Text",hint:"Click text area above to start typing"}};
+var lang="zh";
+function t(key){return i18n[lang][key]}
+function updateUI(){document.querySelectorAll("[data-key]").forEach(function(el){var k=el.getAttribute("data-key");if(k==="acc")el.innerHTML=t(k)+' <span class="val" id="acc">'+document.getElementById("acc").textContent+'</span>';else if(k==="time")el.innerHTML=t(k)+' <span class="val" id="time">'+document.getElementById("time").textContent+'</span>';else el.textContent=t(k)})}
+function toggleLang(){lang=lang==="zh"?"en":"zh";updateUI()}
+function toggleFS(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+var textsZh=["春眠不觉晓处处闻啼鸟夜来风雨声花落知多少小荷才露尖尖角早有蜻蜓立上头接天莲叶无穷碧映日荷花别样红","生活不止眼前的苟且还有诗和远方的田野你赤手空拳来到人世间为找到那片海不顾一切","学习编程就像学习一门新的语言需要耐心和持续的练习每一次敲击键盘都是通往大师之路的一步"];
+var textsEn=["The quick brown fox jumps over the lazy dog near the river bank on a sunny afternoon in the park.","Programming is the art of telling another human being what one wants the computer to do. Practice makes perfect.","Success is not final failure is not fatal it is the courage to continue that counts in the journey of life."];
+var target="",idx=0,startTime=null,errors=0,totalTyped=0,timer=null;
+function newText(){var pool=lang==="zh"?textsZh:textsEn;target=pool[Math.floor(Math.random()*pool.length)];idx=0;errors=0;totalTyped=0;startTime=null;clearInterval(timer);renderTarget();document.getElementById("hiddenInput").value="";document.getElementById("wpm").textContent="0";document.getElementById("acc").textContent="100%";document.getElementById("time").textContent="0s"}
+function renderTarget(){var t=document.getElementById("targetText");t.innerHTML="";for(var i=0;i<target.length;i++){var s=document.createElement("span");s.textContent=target[i];if(i<idx){s.className=idx>0&&target[i]!==document.getElementById("hiddenInput").value[i]?"incorrect":"correct"}else if(i===idx){s.className="current"}t.appendChild(s)}}
+function focusInput(){document.getElementById("hiddenInput").focus()}
+function updateStats(){if(!startTime)return;var elapsed=(Date.now()-startTime)/1000;var minutes=elapsed/60;var wordsTyped=(idx-errors)/5;var wpm=minutes>0?Math.round(wordsTyped/minutes):0;var accuracy=totalTyped>0?Math.round((totalTyped-errors)/totalTyped*100):100;document.getElementById("wpm").textContent=Math.max(0,wpm);document.getElementById("acc").textContent=accuracy+"%";document.getElementById("time").textContent=Math.floor(elapsed)+"s"}
+document.getElementById("hiddenInput").addEventListener("input",function(e){if(!startTime){startTime=Date.now();timer=setInterval(updateStats,200)}var v=e.target.value;if(v.length>idx){for(var i=idx;i<v.length&&i<target.length;i++){totalTyped++;if(v[i]!==target[i])errors++}idx=v.length}else{idx=v.length}renderTarget();updateStats();if(idx>=target.length){clearInterval(timer);updateStats()}});
+document.addEventListener("keydown",function(e){if(e.key==="Tab"){e.preventDefault();focusInput()}});
+newText();updateUI();focusInput();
+</script>
+</body>
+</html>
