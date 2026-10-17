@@ -1,0 +1,19 @@
+{
+  "name": "打字测速 · 小工具",
+  "short_name": "打字测速",
+  "description": "实时计算打字速度与准确率",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f7f9",
+  "theme_color": "#f5a623",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -2,63 +2,293 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>打字测速 | Typing Speed</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>打字测速 · 速度与准确率</title>
+<meta name="description" content="实时计算打字速度（WPM）与准确率，支持中英文练习文本">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg">
+<meta name="theme-color" content="#f5a623">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="打字测速">
 <style>
-:root{--c:#00BCD4;--cd:#0097A7;--w:#fff;--bg:#f0f8f9;--t:#333;--err:#FF5252;--ok:#4CAF50}
+
+:root{
+  --bg:#f4f5f7;           /* 页面底色：浅灰，避免纯白刺眼 */
+  --bg-glow:#ffffff;      /* 顶部径向光晕色，制造轻微的空间感 */
+  --surface:#ffffff;      /* 卡片底色 */
+  --surface-2:#fafbfc;    /* 卡片内的次级区块（输入框、结果区） */
+  --text:#16181d;         /* 主文字 */
+  --soft:#5d636e;         /* 次要文字 */
+  --mute:#8b929e;         /* 弱化文字（提示、单位、占位符） */
+  --line:#e6e8ec;         /* 分割线与边框 */
+  --accent:#26a69a;       /* 强调色（各玩具不同） */
+  --accent-soft:#e6f4f2;  /* 强调色的浅色版，用于底色块 */
+  --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--t);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;overflow:hidden;user-select:none}
-.lang-btn{position:fixed;top:20px;left:20px;z-index:100;padding:8px 16px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
-.lang-btn:hover{background:var(--cd)}
-.fs-btn{position:fixed;top:20px;right:20px;z-index:100;padding:8px 16px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
-.fs-btn:hover{background:var(--cd)}
-h2{color:var(--c);margin-bottom:15px;font-weight:600}
-.target-text{max-width:600px;width:90vw;padding:20px;background:var(--w);border-radius:12px;font-size:18px;line-height:1.8;letter-spacing:2px;border:2px solid var(--c);box-shadow:0 4px 16px rgba(0,188,212,0.1);margin-bottom:15px;min-height:100px}
-.target-text span{transition:color .1s}
-.target-text span.correct{color:var(--ok)}
-.target-text span.incorrect{color:var(--err);text-decoration:underline}
-.target-text span.current{border-bottom:2px solid var(--c)}
-textarea{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
-.stats{display:flex;gap:30px;font-size:16px;font-weight:600;margin-bottom:10px}
-.stats .val{color:var(--c)}
-.stats .wpm{font-size:28px;font-weight:700;color:var(--cd)}
-.btn-new{padding:10px 24px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:15px;font-weight:600;margin-top:8px;transition:.2s;font-family:inherit}
-.btn-new:hover{background:var(--cd)}
-.hint{font-size:13px;color:#999;margin-top:6px}
-@media(max-width:600px){.target-text{font-size:15px}.stats{gap:16px;font-size:14px}}
+
+body{
+  font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+  background:var(--bg);
+  /* 顶部一层极淡光晕，比死板的纯色更有层次 */
+  background-image:radial-gradient(120% 80% at 50% 0%, var(--bg-glow) 0%, rgba(255,255,255,0) 62%);
+  background-attachment:fixed;
+  color:var(--text);
+  min-height:100dvh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:24px; -webkit-font-smoothing:antialiased;
+}
+
+.app{width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; gap:20px}
+
+.head{text-align:center}
+.head h1{font-size:22px; font-weight:600; letter-spacing:.5px}
+.head p{font-size:13px; color:var(--mute); margin-top:6px}
+
+.card{
+  width:100%; background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r-lg); padding:22px; box-shadow:var(--shadow);
+}
+
+.stage{
+  width:288px; height:288px; position:relative;
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:50%; box-shadow:var(--shadow);
+  display:flex; align-items:center; justify-content:center;
+}
+.stage canvas{border-radius:50%}
+
+.phase{
+  font-size:29px; font-weight:300; letter-spacing:6px;
+  color:var(--accent); min-height:42px; text-align:center;
+  transition:color .4s var(--ease);
+}
+.cd{font-size:15px; color:var(--soft); font-variant-numeric:tabular-nums; min-height:22px}
+.meta{font-size:13px; color:var(--mute); min-height:20px; text-align:center}
+
+.row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+.stats{display:flex; gap:10px; width:100%}
+.stat{
+  flex:1; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:var(--r-md); padding:12px; text-align:center;
+}
+.stat .k{font-size:11px; color:var(--mute); letter-spacing:1px}
+.stat .v{font-size:21px; font-weight:600; margin-top:3px; font-variant-numeric:tabular-nums}
+
+.chip{
+  padding:9px 18px; font-size:13px; font-weight:500; font-family:inherit;
+  background:var(--surface); color:var(--soft);
+  border:1px solid var(--line); border-radius:999px; cursor:pointer;
+  transition:all .2s var(--ease);
+}
+.chip:hover{border-color:var(--accent); color:var(--accent)}
+.chip.active{
+  background:var(--accent); border-color:var(--accent); color:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,.14);
+}
+
+.btn{
+  padding:13px 42px; font-size:15px; font-weight:600; font-family:inherit;
+  letter-spacing:3px; background:var(--accent); color:#fff;
+  border:none; border-radius:var(--r-md); cursor:pointer;
+  transition:transform .15s var(--ease), box-shadow .2s var(--ease);
+  box-shadow:0 6px 20px rgba(0,0,0,.16);
+}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.ghost{background:transparent; border:1px solid var(--line); color:var(--soft); box-shadow:none}
+
+.lang{
+  position:fixed; top:16px; right:16px; z-index:20;
+  padding:7px 14px; font-size:12px; font-weight:600; font-family:inherit;
+  background:var(--surface); color:var(--soft);
+  border:1px solid var(--line); border-radius:999px; cursor:pointer;
+  transition:all .2s var(--ease);
+}
+.lang:hover{border-color:var(--accent); color:var(--accent)}
+
+.hint{font-size:12px; color:var(--mute); text-align:center; line-height:1.7}
+
+@media (max-width:380px){
+  .stage{width:250px;height:250px}
+  .phase{font-size:25px; letter-spacing:4px}
+}
+
+:root{ --accent:#f5a623; --accent-soft:#fdf1de; }
+
+.text{
+  width:100%; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:var(--r-md); padding:18px; font-size:16px; line-height:2;
+  letter-spacing:.5px; max-height:150px; overflow:hidden;
+}
+.text span{transition:color .1s, background .1s}
+.text span.ok{color:var(--accent)}
+.text span.bad{color:#d9534f; background:rgba(217,83,79,.12); border-radius:3px}
+.text span.cur{background:var(--accent-soft); border-radius:3px}
+textarea.typed{
+  width:100%; margin-top:14px; padding:14px; font-size:15px; font-family:inherit;
+  border:1px solid var(--line); border-radius:var(--r-md); background:var(--surface);
+  resize:none; color:var(--text); line-height:1.7;
+}
+textarea.typed:focus{outline:none; border-color:var(--accent)}
+
 </style>
 </head>
 <body>
-<button class="lang-btn" onclick="toggleLang()">中/EN</button>
-<button class="fs-btn" onclick="toggleFS()">全屏</button>
-<h2 data-key="title">打字测速</h2>
-<div class="target-text" id="targetText" onclick="focusInput()"></div>
-<textarea id="hiddenInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
-<div class="stats">
-  <div><span class="wpm" id="wpm">0</span> <span data-key="wpm">WPM</span></div>
-  <div data-key="acc">准确率: <span class="val" id="acc">100%</span></div>
-  <div data-key="time">用时: <span class="val" id="time">0s</span></div>
+<button class="lang" id="langBtn" onclick="toggleLang()">EN</button>
+<div class="app">
+
+  <div class="head">
+    <h1 id="t_title">打字测速</h1>
+    <p id="t_sub">开始输入下方文本，实时统计速度与准确率</p>
+  </div>
+
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><div class="k">WPM</div><div class="v" id="vWpm">0</div></div>
+      <div class="stat"><div class="k" id="t_acc">准确率</div><div class="v" id="vAcc">100%</div></div>
+      <div class="stat"><div class="k" id="t_time">用时</div><div class="v" id="vTime">0s</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="text" id="sample"></div>
+    <textarea class="typed" id="typed" rows="3" placeholder="在这里开始输入…"></textarea>
+  </div>
+
+  <div class="row">
+    <button class="btn ghost" id="nextBtn" onclick="nextText()">换一段</button>
+    <button class="btn ghost" onclick="resetTest()">重来</button>
+  </div>
+
+  <div class="hint" id="t_hint">WPM = 每分钟输入的标准词数（按 5 字符 = 1 词计算）</div>
+
 </div>
-<div class="hint" data-key="hint">点击上方文本区域开始打字</div>
-<button class="btn-new" onclick="newText()" data-key="new">换一段</button>
 <script>
-/* ===== 打字测速 / Typing Speed ===== */
-var i18n={zh:{title:"打字测速",wpm:"WPM",acc:"准确率: ",time:"用时: ",new:"换一段",hint:"点击上方文本区域开始打字"},en:{title:"Typing Speed Test",wpm:"WPM",acc:"Accuracy: ",time:"Time: ",new:"New Text",hint:"Click text area above to start typing"}};
-var lang="zh";
-function t(key){return i18n[lang][key]}
-function updateUI(){document.querySelectorAll("[data-key]").forEach(function(el){var k=el.getAttribute("data-key");if(k==="acc")el.innerHTML=t(k)+' <span class="val" id="acc">'+document.getElementById("acc").textContent+'</span>';else if(k==="time")el.innerHTML=t(k)+' <span class="val" id="time">'+document.getElementById("time").textContent+'</span>';else el.textContent=t(k)})}
-function toggleLang(){lang=lang==="zh"?"en":"zh";updateUI()}
-function toggleFS(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
-var textsZh=["春眠不觉晓处处闻啼鸟夜来风雨声花落知多少小荷才露尖尖角早有蜻蜓立上头接天莲叶无穷碧映日荷花别样红","生活不止眼前的苟且还有诗和远方的田野你赤手空拳来到人世间为找到那片海不顾一切","学习编程就像学习一门新的语言需要耐心和持续的练习每一次敲击键盘都是通往大师之路的一步"];
-var textsEn=["The quick brown fox jumps over the lazy dog near the river bank on a sunny afternoon in the park.","Programming is the art of telling another human being what one wants the computer to do. Practice makes perfect.","Success is not final failure is not fatal it is the courage to continue that counts in the journey of life."];
-var target="",idx=0,startTime=null,errors=0,totalTyped=0,timer=null;
-function newText(){var pool=lang==="zh"?textsZh:textsEn;target=pool[Math.floor(Math.random()*pool.length)];idx=0;errors=0;totalTyped=0;startTime=null;clearInterval(timer);renderTarget();document.getElementById("hiddenInput").value="";document.getElementById("wpm").textContent="0";document.getElementById("acc").textContent="100%";document.getElementById("time").textContent="0s"}
-function renderTarget(){var t=document.getElementById("targetText");t.innerHTML="";for(var i=0;i<target.length;i++){var s=document.createElement("span");s.textContent=target[i];if(i<idx){s.className=idx>0&&target[i]!==document.getElementById("hiddenInput").value[i]?"incorrect":"correct"}else if(i===idx){s.className="current"}t.appendChild(s)}}
-function focusInput(){document.getElementById("hiddenInput").focus()}
-function updateStats(){if(!startTime)return;var elapsed=(Date.now()-startTime)/1000;var minutes=elapsed/60;var wordsTyped=(idx-errors)/5;var wpm=minutes>0?Math.round(wordsTyped/minutes):0;var accuracy=totalTyped>0?Math.round((totalTyped-errors)/totalTyped*100):100;document.getElementById("wpm").textContent=Math.max(0,wpm);document.getElementById("acc").textContent=accuracy+"%";document.getElementById("time").textContent=Math.floor(elapsed)+"s"}
-document.getElementById("hiddenInput").addEventListener("input",function(e){if(!startTime){startTime=Date.now();timer=setInterval(updateStats,200)}var v=e.target.value;if(v.length>idx){for(var i=idx;i<v.length&&i<target.length;i++){totalTyped++;if(v[i]!==target[i])errors++}idx=v.length}else{idx=v.length}renderTarget();updateStats();if(idx>=target.length){clearInterval(timer);updateStats()}});
-document.addEventListener("keydown",function(e){if(e.key==="Tab"){e.preventDefault();focusInput()}});
-newText();updateUI();focusInput();
+
+/* ============================================================
+ * 打字测速
+ * ------------------------------------------------------------
+ * 指标定义：
+ *   WPM（Words Per Minute）= (正确字符数 / 5) / 分钟数
+ *     为什么除以 5？这是业界通用的「标准词长」，
+ *     这样不同语言的打字速度才能横向比较。
+ *   准确率 = 正确字符数 / 已输入字符数
+ *
+ * 实现要点：
+ *   - 用 keydown 前把目标文本拆成 <span>，逐字符比对上色
+ *   - 计时从第一次按键开始，避免用户还没准备好就跑表
+ * ========================================================== */
+
+const SAMPLES = [
+  'the quick brown fox jumps over the lazy dog',
+  'practice makes perfect when you type every day',
+  'clean code is simple direct and easy to read',
+  'typing fast is a skill built by repetition',
+  'focus on accuracy first and speed will follow'
+];
+
+let text = SAMPLES[0];
+let started = false;
+let t0 = 0;
+let timer = null;
+
+const sampleEl = document.getElementById('sample');
+const typedEl  = document.getElementById('typed');
+
+const I18N = {
+  zh:{ title:'打字测速', sub:'开始输入下方文本，实时统计速度与准确率',
+       hint:'WPM = 每分钟输入的标准词数（按 5 字符 = 1 词计算）', acc:'准确率' },
+  en:{ title:'Typing Test', sub:'Start typing to measure speed and accuracy live',
+       hint:'WPM counts every 5 characters as one word', acc:'Accuracy' }
+};
+let lang = 'zh';
+
+/** 把目标文本渲染成逐字符 span，便于上色 */
+function paintSample(){
+  sampleEl.innerHTML = '';
+  for (let i=0;i<text.length;i++){
+    const s = document.createElement('span');
+    s.textContent = text[i];
+    sampleEl.appendChild(s);
+  }
+}
+
+/** 根据已输入内容给字符上色，并更新统计 */
+function update(){
+  const val = typedEl.value;
+  const kids = sampleEl.children;
+
+  let correct = 0;
+  for (let i=0;i<text.length;i++){
+    const k = kids[i];
+    k.className = '';
+    if (i < val.length){
+      if (val[i] === text[i]){ k.className = 'ok'; correct++; }
+      else                   { k.className = 'bad'; }
+    }
+  }
+  if (val.length < text.length && kids[val.length]){
+    kids[val.length].className = 'cur';
+  }
+
+  const secs = started ? Math.max(1, (Date.now()-t0)/1000) : 0;
+  const wpm  = secs ? Math.round((correct/5)/(secs/60)) : 0;
+  const acc  = val.length ? Math.round(correct/val.length*100) : 100;
+
+  document.getElementById('vWpm').textContent = wpm;
+  document.getElementById('vAcc').textContent = acc + '%';
+  document.getElementById('vTime').textContent = Math.floor(secs) + 's';
+}
+
+function nextText(){
+  const i = Math.floor(Math.random()*SAMPLES.length);
+  text = SAMPLES[i];
+  resetTest();
+}
+
+function resetTest(){
+  started = false;
+  typedEl.value = '';
+  document.getElementById('vWpm').textContent = '0';
+  document.getElementById('vAcc').textContent = '100%';
+  document.getElementById('vTime').textContent = '0s';
+  paintSample();
+  update();
+}
+
+typedEl.addEventListener('input', function(){
+  if (!started){ started = true; t0 = Date.now(); }
+  update();
+});
+typedEl.addEventListener('keydown', function(e){
+  // 屏蔽 Tab 键，避免焦点跳走打断打字
+  if (e.key === 'Tab') e.preventDefault();
+});
+
+function refresh(){
+  const L = I18N[lang];
+  document.getElementById('t_title').textContent = L.title;
+  document.getElementById('t_sub').textContent   = L.sub;
+  document.getElementById('t_hint').textContent  = L.hint;
+  document.getElementById('t_acc').textContent   = L.acc;
+  document.getElementById('langBtn').textContent = (lang==='zh') ? 'EN' : '中';
+}
+function toggleLang(){ lang = (lang==='zh') ? 'en' : 'zh'; refresh(); }
+
+refresh();
+resetTest();
+
+/* ---------- PWA 注册 ----------
+ * 注册 Service Worker 后本页被缓存，断网也能打开。
+ * 放在最后且 catch 掉异常：即使浏览器不支持也不影响正常功能。 */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
 </script>
 </body>
 </html>
