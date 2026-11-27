@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>打字测速 · 速度与准确率</title>
-<meta name="description" content="实时计算打字速度（WPM）与准确率，支持中英文练习文本">
+<title>打字测速 · 速度与准确率 v2.0</title>
+<meta name="description" content="打字测速 v2.0：多语言词库、准确度统计、错误高亮、历史成绩图表与自定义文本">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg">
 <meta name="theme-color" content="#f5a623">
@@ -13,16 +13,16 @@
 <style>
 
 :root{
-  --bg:#f4f5f7;           /* 页面底色：浅灰，避免纯白刺眼 */
-  --bg-glow:#ffffff;      /* 顶部径向光晕色，制造轻微的空间感 */
-  --surface:#ffffff;      /* 卡片底色 */
-  --surface-2:#fafbfc;    /* 卡片内的次级区块（输入框、结果区） */
-  --text:#16181d;         /* 主文字 */
-  --soft:#5d636e;         /* 次要文字 */
-  --mute:#8b929e;         /* 弱化文字（提示、单位、占位符） */
-  --line:#e6e8ec;         /* 分割线与边框 */
-  --accent:#26a69a;       /* 强调色（各玩具不同） */
-  --accent-soft:#e6f4f2;  /* 强调色的浅色版，用于底色块 */
+  --bg:#f4f5f7;
+  --bg-glow:#ffffff;
+  --surface:#ffffff;
+  --surface-2:#fafbfc;
+  --text:#16181d;
+  --soft:#5d636e;
+  --mute:#8b929e;
+  --line:#e6e8ec;
+  --accent:#26a69a;
+  --accent-soft:#e6f4f2;
   --r-lg:20px; --r-md:14px; --r-sm:10px;
   --ease:cubic-bezier(.4,0,.2,1);
   --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
@@ -32,7 +32,6 @@
 body{
   font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
   background:var(--bg);
-  /* 顶部一层极淡光晕，比死板的纯色更有层次 */
   background-image:radial-gradient(120% 80% at 50% 0%, var(--bg-glow) 0%, rgba(255,255,255,0) 62%);
   background-attachment:fixed;
   color:var(--text);
@@ -41,7 +40,7 @@ body{
   padding:24px; -webkit-font-smoothing:antialiased;
 }
 
-.app{width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; gap:20px}
+.app{width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; gap:18px}
 
 .head{text-align:center}
 .head h1{font-size:22px; font-weight:600; letter-spacing:.5px}
@@ -49,49 +48,31 @@ body{
 
 .card{
   width:100%; background:var(--surface); border:1px solid var(--line);
-  border-radius:var(--r-lg); padding:22px; box-shadow:var(--shadow);
+  border-radius:var(--r-lg); padding:20px; box-shadow:var(--shadow);
 }
 
-.stage{
-  width:288px; height:288px; position:relative;
-  background:var(--surface); border:1px solid var(--line);
-  border-radius:50%; box-shadow:var(--shadow);
-  display:flex; align-items:center; justify-content:center;
-}
-.stage canvas{border-radius:50%}
-
-.phase{
-  font-size:29px; font-weight:300; letter-spacing:6px;
-  color:var(--accent); min-height:42px; text-align:center;
-  transition:color .4s var(--ease);
-}
-.cd{font-size:15px; color:var(--soft); font-variant-numeric:tabular-nums; min-height:22px}
-.meta{font-size:13px; color:var(--mute); min-height:20px; text-align:center}
-
-.row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
-.stats{display:flex; gap:10px; width:100%}
+.row{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; align-items:center}
+.stats{display:flex; gap:8px; width:100%}
 .stat{
   flex:1; background:var(--surface-2); border:1px solid var(--line);
-  border-radius:var(--r-md); padding:12px; text-align:center;
+  border-radius:var(--r-md); padding:11px 6px; text-align:center;
 }
 .stat .k{font-size:11px; color:var(--mute); letter-spacing:1px}
-.stat .v{font-size:21px; font-weight:600; margin-top:3px; font-variant-numeric:tabular-nums}
+.stat .v{font-size:19px; font-weight:600; margin-top:3px; font-variant-numeric:tabular-nums}
+.stat .v.hot{color:#ef6c00}
 
 .chip{
-  padding:9px 18px; font-size:13px; font-weight:500; font-family:inherit;
+  padding:7px 14px; font-size:12px; font-weight:500; font-family:inherit;
   background:var(--surface); color:var(--soft);
   border:1px solid var(--line); border-radius:999px; cursor:pointer;
   transition:all .2s var(--ease);
 }
 .chip:hover{border-color:var(--accent); color:var(--accent)}
-.chip.active{
-  background:var(--accent); border-color:var(--accent); color:#fff;
-  box-shadow:0 4px 14px rgba(0,0,0,.14);
-}
+.chip.active{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 4px 14px rgba(0,0,0,.14)}
 
 .btn{
-  padding:13px 42px; font-size:15px; font-weight:600; font-family:inherit;
-  letter-spacing:3px; background:var(--accent); color:#fff;
+  padding:11px 26px; font-size:13px; font-weight:600; font-family:inherit;
+  letter-spacing:1px; background:var(--accent); color:#fff;
   border:none; border-radius:var(--r-md); cursor:pointer;
   transition:transform .15s var(--ease), box-shadow .2s var(--ease);
   box-shadow:0 6px 20px rgba(0,0,0,.16);
@@ -108,31 +89,37 @@ body{
   transition:all .2s var(--ease);
 }
 .lang:hover{border-color:var(--accent); color:var(--accent)}
-
 .hint{font-size:12px; color:var(--mute); text-align:center; line-height:1.7}
-
-@media (max-width:380px){
-  .stage{width:250px;height:250px}
-  .phase{font-size:25px; letter-spacing:4px}
-}
-
-:root{ --accent:#f5a623; --accent-soft:#fdf1de; }
+.hint b{color:var(--accent)}
 
 .text{
   width:100%; background:var(--surface-2); border:1px solid var(--line);
-  border-radius:var(--r-md); padding:18px; font-size:16px; line-height:2;
+  border-radius:var(--r-md); padding:16px; font-size:16px; line-height:2;
   letter-spacing:.5px; max-height:150px; overflow:hidden;
 }
 .text span{transition:color .1s, background .1s}
 .text span.ok{color:var(--accent)}
-.text span.bad{color:#d9534f; background:rgba(217,83,79,.12); border-radius:3px}
-.text span.cur{background:var(--accent-soft); border-radius:3px}
+.text span.bad{color:#d9534f; background:rgba(217,83,79,.12); border-radius:3px; text-decoration:underline wavy #d9534f}
+.text span.cur{background:var(--accent-soft); border-radius:3px; box-shadow:0 0 0 1px var(--accent)}
+.text span.rainbow{animation:rainbowText 1.1s linear infinite}
+@keyframes rainbowText{0%{color:#ef5350}25%{color:#ffca28}50%{color:#66bb6a}75%{color:#42a5f5}100%{color:#ab47bc}}
 textarea.typed{
   width:100%; margin-top:14px; padding:14px; font-size:15px; font-family:inherit;
   border:1px solid var(--line); border-radius:var(--r-md); background:var(--surface);
   resize:none; color:var(--text); line-height:1.7;
 }
 textarea.typed:focus{outline:none; border-color:var(--accent)}
+
+.customBox{display:flex; gap:8px; margin-top:12px}
+.customBox input{
+  flex:1; min-width:0; padding:9px 12px; font-family:inherit; font-size:13px;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:var(--r-md); color:var(--text);
+}
+.customBox input:focus{outline:none; border-color:var(--accent)}
+canvas.chart{width:100%; height:120px; display:block; margin-top:6px}
+.chartTitle{font-size:12px; color:var(--soft); font-weight:600; text-align:left; margin-bottom:4px}
+
+@media (max-width:380px){ .btn{padding:10px 18px} }
 
 </style>
 </head>
@@ -150,17 +137,29 @@ textarea.typed:focus{outline:none; border-color:var(--accent)}
       <div class="stat"><div class="k">WPM</div><div class="v" id="vWpm">0</div></div>
       <div class="stat"><div class="k" id="t_acc">准确率</div><div class="v" id="vAcc">100%</div></div>
       <div class="stat"><div class="k" id="t_time">用时</div><div class="v" id="vTime">0s</div></div>
+      <div class="stat"><div class="k" id="t_err">错误</div><div class="v" id="vErr">0</div></div>
     </div>
   </div>
 
   <div class="card">
-    <div class="text" id="sample"></div>
+    <div class="row" id="corpus"></div>
+    <div class="text" id="sample" style="margin-top:14px"></div>
     <textarea class="typed" id="typed" rows="3" placeholder="在这里开始输入…"></textarea>
+    <div class="customBox">
+      <input type="text" id="customText" placeholder="粘贴自定义文本…" aria-label="custom text">
+      <button class="btn ghost" id="useBtn" onclick="useCustom()">使用</button>
+    </div>
   </div>
 
   <div class="row">
     <button class="btn ghost" id="nextBtn" onclick="nextText()">换一段</button>
-    <button class="btn ghost" onclick="resetTest()">重来</button>
+    <button class="btn ghost" id="resetBtn" onclick="resetTest()">重来</button>
+    <button class="btn" id="doneBtn" onclick="finishTest()">完成</button>
+  </div>
+
+  <div class="card">
+    <div class="chartTitle" id="t_history">最近成绩（WPM / 准确率）</div>
+    <canvas class="chart" id="chart" width="440" height="120"></canvas>
   </div>
 
   <div class="hint" id="t_hint">WPM = 每分钟输入的标准词数（按 5 字符 = 1 词计算）</div>
@@ -169,42 +168,91 @@ textarea.typed:focus{outline:none; border-color:var(--accent)}
 <script>
 
 /* ============================================================
- * 打字测速
+ * 打字测速 v2.0
  * ------------------------------------------------------------
- * 指标定义：
- *   WPM（Words Per Minute）= (正确字符数 / 5) / 分钟数
- *     为什么除以 5？这是业界通用的「标准词长」，
- *     这样不同语言的打字速度才能横向比较。
- *   准确率 = 正确字符数 / 已输入字符数
- *
- * 实现要点：
- *   - 用 keydown 前把目标文本拆成 <span>，逐字符比对上色
- *   - 计时从第一次按键开始，避免用户还没准备好就跑表
+ * 指标：
+ *   WPM = (正确字符数 / 5) / 分钟数；准确率 = 正确字符数 / 已输入字符数。
+ * v2.0 新增：
+ *   1. 多语言词库（英文 / 中文 / 代码）与自定义文本
+ *   2. 错误数统计、波浪线高亮、当前字符光标
+ *   3. 历史成绩图表（Canvas 柱状图 + 准确率折线），localStorage 持久化
+ *   4. 完美 / 高速通关触发专属彩蛋
  * ========================================================== */
 
-const SAMPLES = [
-  'the quick brown fox jumps over the lazy dog',
-  'practice makes perfect when you type every day',
-  'clean code is simple direct and easy to read',
-  'typing fast is a skill built by repetition',
-  'focus on accuracy first and speed will follow'
-];
+const SAMPLES = {
+  en: [
+    'the quick brown fox jumps over the lazy dog',
+    'practice makes perfect when you type every day',
+    'clean code is simple direct and easy to read',
+    'typing fast is a skill built by repetition',
+    'focus on accuracy first and speed will follow'
+  ],
+  zh: [
+    '生活就像一盒巧克力你永远不知道下一颗是什么味道',
+    '保持专注把每一件小事做到极致就是最大的成就',
+    '前端开发需要不断学习新的技术和最佳实践',
+    '良好的代码习惯能让团队协作变得更加顺畅',
+    '每一次练习都是通向熟练的必经之路'
+  ],
+  code: [
+    'const result = array.map(x => x * 2).filter(Boolean);',
+    'function greet(name) { return "hello " + name; }',
+    '<div class="card"><span id="title">Hi</span></div>',
+    'if (state.ready) { render(); saveToStorage(); }',
+    'await fetch(url).then(res => res.json());'
+  ]
+};
+const CORPUS_LABELS = { en:'English', zh:'中文', code:'代码', custom:'自定义' };
 
-let text = SAMPLES[0];
-let started = false;
-let t0 = 0;
-let timer = null;
+const HIST_KEY = 'typing_history_v2';
+let corpus = 'en';
+let text = SAMPLES.en[0];
+let started = false, finished = false, t0 = 0, timer = null;
+let errors = 0, correctChars = 0, lang = 'zh', results = [];
 
 const sampleEl = document.getElementById('sample');
 const typedEl  = document.getElementById('typed');
+const chartEl  = document.getElementById('chart');
+const chartCtx = chartEl.getContext('2d');
 
 const I18N = {
   zh:{ title:'打字测速', sub:'开始输入下方文本，实时统计速度与准确率',
-       hint:'WPM = 每分钟输入的标准词数（按 5 字符 = 1 词计算）', acc:'准确率' },
+       hint:'WPM = 每分钟输入的标准词数（按 5 字符 = 1 词计算）', acc:'准确率', time:'用时', err:'错误',
+       next:'换一段', reset:'重来', done:'完成', history:'最近成绩（WPM / 准确率）',
+       use:'使用', custom:'粘贴自定义文本…',
+       result:function(w,a){ return '完成！' + w + ' WPM · ' + a + '% 准确率'; },
+       perfect:'完美无误 · SOLCAT 为你喝彩', fast:'键盘闪电！80+ WPM' },
   en:{ title:'Typing Test', sub:'Start typing to measure speed and accuracy live',
-       hint:'WPM counts every 5 characters as one word', acc:'Accuracy' }
+       hint:'WPM counts every 5 characters as one word', acc:'Accuracy', time:'Time', err:'Errors',
+       next:'New text', reset:'Reset', done:'Finish', history:'Recent results (WPM / accuracy)',
+       use:'Use', custom:'Paste custom text…',
+       result:function(w,a){ return 'Done! ' + w + ' WPM · ' + a + '% accuracy'; },
+       perfect:'Flawless · SOLCAT applauds you', fast:'Keyboard lightning! 80+ WPM' }
 };
-let lang = 'zh';
+
+/* ---------- 存档 ---------- */
+function loadHistory(){
+  try {
+    const r = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+    results = Array.isArray(r) ? r.slice(-10) : [];
+  } catch(e){ results = []; }
+}
+function saveHistory(){
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(results.slice(-10))); } catch(e){}
+}
+
+/* ---------- 词库 ---------- */
+function buildCorpus(){
+  const box = document.getElementById('corpus');
+  box.innerHTML = '';
+  Object.keys(SAMPLES).forEach(function(k){
+    const b = document.createElement('button');
+    b.className = 'chip' + (k === corpus ? ' active' : '');
+    b.textContent = CORPUS_LABELS[k];
+    b.onclick = function(){ corpus = k; nextText(); buildCorpus(); };
+    box.appendChild(b);
+  });
+}
 
 /** 把目标文本渲染成逐字符 span，便于上色 */
 function paintSample(){
@@ -221,65 +269,192 @@ function update(){
   const val = typedEl.value;
   const kids = sampleEl.children;
 
-  let correct = 0;
+  correctChars = 0;
+  errors = 0;
   for (let i=0;i<text.length;i++){
     const k = kids[i];
     k.className = '';
     if (i < val.length){
-      if (val[i] === text[i]){ k.className = 'ok'; correct++; }
-      else                   { k.className = 'bad'; }
+      if (val[i] === text[i]){ k.className = 'ok'; correctChars++; }
+      else { k.className = 'bad'; errors++; }
     }
   }
-  if (val.length < text.length && kids[val.length]){
-    kids[val.length].className = 'cur';
-  }
+  if (val.length < text.length && kids[val.length]) kids[val.length].className = 'cur';
 
   const secs = started ? Math.max(1, (Date.now()-t0)/1000) : 0;
-  const wpm  = secs ? Math.round((correct/5)/(secs/60)) : 0;
-  const acc  = val.length ? Math.round(correct/val.length*100) : 100;
+  const wpm  = secs ? Math.round((correctChars/5)/(secs/60)) : 0;
+  const acc  = val.length ? Math.round(correctChars/val.length*100) : 100;
 
   document.getElementById('vWpm').textContent = wpm;
   document.getElementById('vAcc').textContent = acc + '%';
+  document.getElementById('vAcc').className   = 'v' + (acc < 90 ? ' hot' : '');
   document.getElementById('vTime').textContent = Math.floor(secs) + 's';
+  document.getElementById('vErr').textContent  = errors;
+
+  if (started && val.length >= text.length && !finished) finishTest();
+}
+
+function currentStats(){
+  const secs = started ? Math.max(1, (Date.now()-t0)/1000) : 0;
+  const wpm  = secs ? Math.round((correctChars/5)/(secs/60)) : 0;
+  const acc  = typedEl.value.length ? Math.round(correctChars/typedEl.value.length*100) : 100;
+  return { wpm:wpm, acc:acc };
+}
+
+function finishTest(){
+  if (finished || !started) return;
+  finished = true;
+  const s = currentStats();
+  results.push({ wpm:s.wpm, acc:s.acc, ts:Date.now() });
+  results = results.slice(-10);
+  saveHistory();
+  drawChart();
+
+  const L = I18N[lang];
+  document.getElementById('t_hint').innerHTML = '<b>' + L.result(s.wpm, s.acc) + '</b>';
+  if (s.acc === 100 && s.wpm > 0) eggUnlock('typing-perfect', L.perfect);
+  if (s.wpm >= 80) eggUnlock('typing-fast', L.fast);
 }
 
 function nextText(){
-  const i = Math.floor(Math.random()*SAMPLES.length);
-  text = SAMPLES[i];
+  if (corpus !== 'custom'){
+    const arr = SAMPLES[corpus];
+    text = arr[Math.floor(Math.random()*arr.length)];
+  }
+  resetTest();
+}
+
+function useCustom(){
+  const v = document.getElementById('customText').value.trim();
+  if (!v) return;
+  corpus = 'custom';
+  SAMPLES.custom = [v];
+  text = v;
+  buildCorpus();
   resetTest();
 }
 
 function resetTest(){
-  started = false;
+  started = false; finished = false;
   typedEl.value = '';
   document.getElementById('vWpm').textContent = '0';
   document.getElementById('vAcc').textContent = '100%';
+  document.getElementById('vAcc').className   = 'v';
   document.getElementById('vTime').textContent = '0s';
+  document.getElementById('vErr').textContent  = '0';
+  document.getElementById('t_hint').textContent = I18N[lang].hint;
+  if (timer){ clearInterval(timer); timer = null; }
   paintSample();
   update();
 }
 
+/* ---------- 历史图表 ---------- */
+function drawChart(){
+  const w = chartEl.width, h = chartEl.height;
+  chartCtx.clearRect(0,0,w,h);
+  chartCtx.strokeStyle = '#e6e8ec'; chartCtx.lineWidth = 1;
+  chartCtx.beginPath(); chartCtx.moveTo(0,h-18); chartCtx.lineTo(w,h-18); chartCtx.stroke();
+
+  if (!results.length){
+    chartCtx.fillStyle = '#8b929e'; chartCtx.font = '12px system-ui,sans-serif';
+    chartCtx.textAlign = 'center';
+    chartCtx.fillText('—', w/2, h/2);
+    return;
+  }
+
+  const maxWpm = Math.max(40, ...results.map(function(r){ return r.wpm; }));
+  const n = results.length;
+  const bw = Math.min(28, (w-20)/n - 6);
+  const accPts = [];
+
+  results.forEach(function(r, i){
+    const x = 10 + i*((w-20)/n) + ((w-20)/n - bw)/2;
+    const bh = Math.max(2, (h-30) * r.wpm/maxWpm);
+    const y = h-18-bh;
+    chartCtx.fillStyle = '#26a69a';
+    chartCtx.globalAlpha = .85;
+    chartCtx.fillRect(x, y, bw, bh);
+    chartCtx.globalAlpha = 1;
+    chartCtx.fillStyle = '#5d636e'; chartCtx.font = '10px system-ui,sans-serif';
+    chartCtx.textAlign = 'center';
+    chartCtx.fillText(String(r.wpm), x+bw/2, y-4);
+    accPts.push({ x:x+bw/2, y:h-18-(h-30)*r.acc/100 });
+  });
+
+  // 准确率折线（用橙色区分）
+  chartCtx.beginPath();
+  accPts.forEach(function(p, i){ i ? chartCtx.lineTo(p.x,p.y) : chartCtx.moveTo(p.x,p.y); });
+  chartCtx.strokeStyle = '#f5a623'; chartCtx.lineWidth = 2; chartCtx.stroke();
+  accPts.forEach(function(p){
+    chartCtx.beginPath(); chartCtx.arc(p.x,p.y,2.5,0,Math.PI*2);
+    chartCtx.fillStyle = '#f5a623'; chartCtx.fill();
+  });
+}
+
+/* ---------- 输入 ---------- */
 typedEl.addEventListener('input', function(){
   if (!started){ started = true; t0 = Date.now(); }
   update();
 });
 typedEl.addEventListener('keydown', function(e){
-  // 屏蔽 Tab 键，避免焦点跳走打断打字
-  if (e.key === 'Tab') e.preventDefault();
+  if (e.key === 'Tab') e.preventDefault();   // 屏蔽 Tab，避免焦点跳走打断打字
 });
 
 function refresh(){
   const L = I18N[lang];
   document.getElementById('t_title').textContent = L.title;
   document.getElementById('t_sub').textContent   = L.sub;
-  document.getElementById('t_hint').textContent  = L.hint;
+  document.getElementById('t_hint').textContent  = finished
+    ? document.getElementById('t_hint').textContent : L.hint;
   document.getElementById('t_acc').textContent   = L.acc;
-  document.getElementById('langBtn').textContent = (lang==='zh') ? 'EN' : '中';
+  document.getElementById('t_time').textContent  = L.time;
+  document.getElementById('t_err').textContent   = L.err;
+  document.getElementById('nextBtn').textContent = L.next;
+  document.getElementById('resetBtn').textContent = L.reset;
+  document.getElementById('doneBtn').textContent  = L.done;
+  document.getElementById('t_history').textContent = L.history;
+  document.getElementById('useBtn').textContent   = L.use;
+  document.getElementById('customText').placeholder = L.custom;
+  document.getElementById('langBtn').textContent = (lang === 'zh') ? 'EN' : '中';
 }
-function toggleLang(){ lang = (lang==='zh') ? 'en' : 'zh'; refresh(); }
+function toggleLang(){ lang = (lang === 'zh') ? 'en' : 'zh'; refresh(); resetTest(); }
 
+/* ---------- 彩蛋接入 ---------- */
+function eggUnlock(id, msg){
+  const E = window.__SOLCAT_EGG__;
+  if (!E || E.unlocked.has(id)) return;
+  E.unlocked.add(id);
+  E.onUnlock.forEach(function(fn){ try{ fn(id); }catch(e){} });
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;top:18%;left:50%;transform:translateX(-50%);z-index:99996;'+
+    'background:rgba(18,20,26,.92);color:#ffca28;padding:12px 22px;border:1px solid #ffca28;'+
+    'border-radius:12px;font:14px ui-monospace,monospace;pointer-events:none;'+
+    'animation:eggIn .3s ease;box-shadow:0 8px 30px rgba(0,0,0,.4)';
+  t.textContent = '☠ ' + msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2400);
+}
+
+function initEgg(){
+  const E = window.__SOLCAT_EGG__;
+  if (!E) return;
+  // 专属彩蛋：KONAMI 解锁后，整段目标文字闪烁彩虹色 3 秒
+  E.onUnlock.push(function(id){
+    if (id !== 'konami') return;
+    Array.prototype.forEach.call(sampleEl.children, function(s){ s.classList.add('rainbow'); });
+    setTimeout(function(){
+      Array.prototype.forEach.call(sampleEl.children, function(s){ s.classList.remove('rainbow'); });
+    }, 3000);
+  });
+}
+document.addEventListener('DOMContentLoaded', initEgg);
+
+/* ---------- 启动 ---------- */
+loadHistory();
+buildCorpus();
 refresh();
 resetTest();
+drawChart();
 
 /* ---------- PWA 注册 ----------
  * 注册 Service Worker 后本页被缓存，断网也能打开。
@@ -289,6 +464,156 @@ if ('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js').catch(function(){});
   });
 }
+</script>
+<script>
+/* ============================================================
+ * SOLCAT EASTER EGG PROTOCOL v2.0 — 通用彩蛋引擎
+ * 零依赖 · 单文件 · 可注入任意 HTML 项目
+ * ============================================================ */
+(function(){
+  'use strict';
+  if (window.__SOLCAT_EGG__) return;
+  window.__SOLCAT_EGG__ = { version:'2.0', unlocked:new Set(), onUnlock:[] };
+
+  var E = window.__SOLCAT_EGG__;
+  var KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  var seq = [], logoClicks = 0, logoTimer = null;
+
+  /* ---------- 1. 控制台署名（ASCII Art） ---------- */
+  function banner(){
+    var art = '%c\n  ____             _   _       _   _   \n' +
+      ' / ___|  ___  _ __| |_(_) __ _| |_| |__  \n' +
+      ' \\___ \\ / _ \\| \'__| __| |/ _` | __| \'_ \\ \n' +
+      '  ___) | (_) | |  | |_| | (_| | |_| | | |\n' +
+      ' |____/ \\___/|_|   \\__|_|\\__,_|\\__|_| |_|\n';
+    console.log(art, 'color:#26a69a;font-family:monospace;font-weight:bold');
+    console.log('%c☠ SOLCAT EASTER EGG PROTOCOL v2.0 — 你找到了隐藏入口',
+      'color:#666;font-size:11px;letter-spacing:1px');
+    console.log('%c提示：↑↑↓↓←→←→BA · 连点标题 5 次 · 输入 solcat · Ctrl+Shift+T',
+      'color:#999;font-size:10px');
+  }
+
+  /* ---------- 2. 烟花彩带粒子 ---------- */
+  function confetti(){
+    var colors = ['#26a69a','#42a5f5','#ef5350','#ffca28','#ab47bc','#66bb6a','#ff7043'];
+    var cvs = document.createElement('canvas');
+    cvs.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:99999';
+    document.body.appendChild(cvs);
+    var ctx = cvs.getContext('2d'), W = cvs.width = innerWidth, H = cvs.height = innerHeight;
+    var P = [];
+    for (var i=0;i<180;i++) P.push({
+      x:W/2+(Math.random()-.5)*120, y:H*.4+(Math.random()-.5)*40,
+      vx:(Math.random()-.5)*18, vy:-Math.random()*16-4,
+      c:colors[i%colors.length], s:Math.random()*8+4, r:Math.random()*6,
+      life:1, spin:(Math.random()-.5)*.3
+    });
+    var f = 0;
+    (function draw(){
+      f++; ctx.clearRect(0,0,W,H);
+      P.forEach(function(p){
+        p.x+=p.vx; p.y+=p.vy; p.vy+=.35; p.vx*=.99; p.r+=p.spin; p.life-=.006;
+        if(p.life<=0) return;
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.globalAlpha=p.life;
+        ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6); ctx.restore();
+      });
+      if (f<180) requestAnimationFrame(draw); else cvs.remove();
+    })();
+  }
+
+  /* ---------- 3. 隐藏开发者面板 ---------- */
+  function devPanel(app){
+    var old = document.getElementById('__egg_panel');
+    if (old){ old.remove(); return; }
+    var d = document.createElement('div');
+    d.id='__egg_panel';
+    d.style.cssText='position:fixed;bottom:20px;right:20px;z-index:99998;width:280px;'+
+      'background:rgba(18,20,26,.94);color:#e0e0e0;border:1px solid #26a69a;border-radius:14px;'+
+      'padding:18px;font:12px/1.7 ui-monospace,monospace;backdrop-filter:blur(12px);'+
+      'box-shadow:0 12px 40px rgba(0,0,0,.4);animation:eggIn .3s ease';
+    d.innerHTML='<div style="color:#26a69a;font-weight:bold;font-size:13px;margin-bottom:10px">'+
+      '☠ SOLCAT 开发者模式</div>'+
+      '<div>应用　　: '+app+'</div>'+
+      '<div>协议　　: EGG PROTOCOL v'+E.version+'</div>'+
+      '<div>解锁数　: '+E.unlocked.size+'</div>'+
+      '<div>UA　　　: '+(navigator.userAgent.slice(0,38))+'…</div>'+
+      '<div>屏幕　　: '+innerWidth+'×'+innerHeight+'</div>'+
+      '<div>运行时间: '+Math.round(performance.now()/1000)+'s</div>'+
+      '<div style="color:#888;margin-top:10px;border-top:1px solid #333;padding-top:8px">'+
+      '已解锁: '+Array.from(E.unlocked).join(', ')+'</div>'+
+      '<button onclick="this.parentNode.remove()" style="margin-top:12px;width:100%;padding:6px;'+
+      'background:#26a69a;color:#fff;border:0;border-radius:6px;cursor:pointer">关闭</button>';
+    document.body.appendChild(d);
+  }
+
+  /* ---------- 4. 隐藏主题（赛博朋克） ---------- */
+  function cyberTheme(){
+    var s=document.getElementById('__egg_cyber');
+    if(s){ s.remove(); document.body.classList.remove('egg-cyber'); return; }
+    s=document.createElement('style'); s.id='__egg_cyber';
+    s.textContent='body.egg-cyber{filter:invert(1) hue-rotate(180deg)!important;}'+
+      'body.egg-cyber *{font-family:"Courier New",monospace!important;letter-spacing:1px}';
+    document.head.appendChild(s); document.body.classList.add('egg-cyber');
+    unlock('cyber','☠ 赛博模式已启用');
+  }
+
+  /* ---------- 5. 解锁分发 ---------- */
+  function unlock(id,msg){
+    if (E.unlocked.has(id)) return;
+    E.unlocked.add(id);
+    if (msg) console.log('%c[EGG] '+msg,'color:#ffca28;font-weight:bold');
+    E.onUnlock.forEach(function(fn){ try{fn(id);}catch(e){} });
+    var t=document.createElement('div');
+    t.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);'+
+      'z-index:99997;background:rgba(18,20,26,.92);color:#ffca28;padding:18px 28px;'+ 
+      'border:1px solid #ffca28;border-radius:12px;font:14px ui-monospace,monospace;'+
+      'pointer-events:none;animation:eggIn .3s ease;box-shadow:0 8px 30px rgba(0,0,0,.4)';
+    t.textContent='☠ '+msg;
+    document.body.appendChild(t); setTimeout(function(){t.remove();},2200);
+  }
+
+  /* ---------- 6. 事件绑定 ---------- */
+  function init(){
+    var app = document.title || 'SOLCAT App';
+    banner();
+
+    // Konami 秘籍
+    addEventListener('keydown', function(e){
+      var k = e.key.length===1 ? e.key.toLowerCase() : e.key;
+      seq.push(k); if(seq.length>KONAMI.length) seq.shift();
+      if (seq.length===KONAMI.length && KONAMI.every(function(v,i){return seq[i]===v;})){
+        seq=[]; confetti(); unlock('konami','KONAMI CODE 已激活！');
+      }
+      // Ctrl+Shift+T → 赛博主题
+      if (e.ctrlKey && e.shiftKey && (e.key==='T'||e.key==='t')){
+        e.preventDefault(); cyberTheme();
+      }
+      // 输入 solcat
+      if (e.key==='Enter' && window.__eggBuf__ === 'solcat'){ cyberTheme(); window.__eggBuf__=''; }
+      if (k.length===1) window.__eggBuf__ = ((window.__eggBuf__||'')+k).slice(-10);
+    });
+
+    // 连点标题 5 次 → 开发者面板
+    addEventListener('DOMContentLoaded', function(){
+      var targets = document.querySelectorAll('h1,.head h1,.logo,header h1');
+      var t = targets[0];
+      if(t){ t.style.cursor='default'; t.addEventListener('click',function(){
+        logoClicks++;
+        clearTimeout(logoTimer);
+        logoTimer=setTimeout(function(){logoClicks=0;},900);
+        if(logoClicks>=5){ logoClicks=0; devPanel(app); unlock('dev','开发者模式已解锁'); }
+      });}
+      // 给 body 加动画 keyframe
+      var a=document.createElement('style');
+      a.textContent='@keyframes eggIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}';
+      document.head.appendChild(a);
+    });
+
+    console.log('%c☠ 彩蛋引擎已加载 — 祝你玩得开心','color:#26a69a');
+  }
+
+  if (document.readyState==='loading') addEventListener('DOMContentLoaded',init);
+  else init();
+})();
 </script>
 </body>
 </html>

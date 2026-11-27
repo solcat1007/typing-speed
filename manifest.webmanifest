@@ -1,7 +1,7 @@
 {
-  "name": "打字测速 · 小工具",
+  "name": "打字测速 · v2.0",
   "short_name": "打字测速",
-  "description": "实时计算打字速度与准确率",
+  "description": "打字测速 v2.0：多语言词库、准确度统计、错误高亮、历史成绩图表与自定义文本",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -15,5 +15,6 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "version": "2.0.0"
 }
